@@ -6,8 +6,11 @@
 //
 
 import UIKit
+import FirebaseAuth
 
 class RegisterViewController: UIViewController {
+	
+	
 	
 	private let scrollView: UIScrollView = {
 		let scrollView = UIScrollView()
@@ -18,7 +21,9 @@ class RegisterViewController: UIViewController {
 	private let imageView: UIImageView = {
 		let imageView = UIImageView()
 		imageView.image = UIImage(systemName: "person.circle")
+		imageView.tintColor = .link
 		imageView.contentMode = .scaleAspectFit
+		imageView.layer.masksToBounds = true
 		return imageView
 	}()
 	
@@ -94,11 +99,10 @@ class RegisterViewController: UIViewController {
 		return button
 	}()
 	
-	
 	override func viewDidLoad() {
 		super.viewDidLoad()
-		//title = ""
-		view.backgroundColor = .white
+		//title = "Log In"
+		view.backgroundColor = .systemBackground
 		
 		navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Register",
 															style: .done,
@@ -127,11 +131,10 @@ class RegisterViewController: UIViewController {
 		let gesture = UITapGestureRecognizer(target: self,
 											 action: #selector(didTapChangeProfilePic))
 		imageView.addGestureRecognizer(gesture)
-		
 	}
 	
 	@objc private func didTapChangeProfilePic() {
-		//presentPhotoActionSheet()
+		presentPhotoActionSheet()
 	}
 	
 	override func viewDidLayoutSubviews() {
@@ -139,12 +142,12 @@ class RegisterViewController: UIViewController {
 		scrollView.frame = view.bounds
 		
 		let size = scrollView.width/4
-		imageView.frame = CGRect(x: (scrollView.width - size)/2,
+		imageView.frame = CGRect(x: (scrollView.width-size)/2,
 								 y: 100,
 								 width: size,
 								 height: size)
 		
-		
+		imageView.layer.cornerRadius = imageView.width/2.0
 		
 		firstNameField.frame = CGRect(x: 30,
 									  y: imageView.bottom+10,
@@ -169,12 +172,6 @@ class RegisterViewController: UIViewController {
 		
 	}
 	
-	@objc private func didTapRegister() {
-		let vc = RegisterViewController()
-		vc.title = "Create Account"
-		navigationController?.pushViewController(vc, animated: true)
-	}
-	
 	@objc private func registerButtonTapped() {
 		emailField.resignFirstResponder()
 		passwordField.resignFirstResponder()
@@ -193,21 +190,36 @@ class RegisterViewController: UIViewController {
 			alertUserLoginError()
 			return
 		}
+		
 		// Firebase Log In
+		
+		FirebaseAuth.Auth.auth().createUser(withEmail: email, password: password, completion: { authResult, error in
+			guard authResult != nil, error == nil else {
+				print("Error cureating user")
+				return
+			}
+		})
+		
+
+			
 		
 	}
 	
-	func alertUserLoginError() {
+	
+	func alertUserLoginError(message: String = "Please enter all information to create a new account.") {
 		let alert = UIAlertController(title: "Woops",
-									  message: "Please enter all information to create a new account.",
+									  message: message,
 									  preferredStyle: .alert)
 		alert.addAction(UIAlertAction(title:"Dismiss",
 									  style: .cancel, handler: nil))
 		present(alert, animated: true)
 	}
 	
-	
-	
+	@objc private func didTapRegister() {
+		let vc = RegisterViewController()
+		vc.title = "Create Account"
+		navigationController?.pushViewController(vc, animated: true)
+	}
 	
 }
 
@@ -217,13 +229,69 @@ extension RegisterViewController: UITextFieldDelegate {
 	func textFieldShouldReturn(_ textField: UITextField) -> Bool {
 		
 		if textField == emailField {
-			passwordField.becomeFirstResponder() // focus Field 
+			passwordField.becomeFirstResponder() // focus Field
 		}
 		else if textField == passwordField {
 			registerButtonTapped()
 		}
 		
 		return true
+	}
+	
+}
+
+
+extension RegisterViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+	
+	func presentPhotoActionSheet() {
+		let actionSheet = UIAlertController(title: "Profile Picture",
+											message: "How would you like to select a picture?",
+											preferredStyle: .actionSheet)
+		actionSheet.addAction(UIAlertAction(title: "Cancel",
+											style: .cancel,
+											handler: nil))
+		actionSheet.addAction(UIAlertAction(title: "Take Photo",
+											style: .default,
+											handler: { [weak self] _ in self?.presentCamera()
+		}))
+		actionSheet.addAction(UIAlertAction(title: "Chose Photo",
+											style: .default,
+											handler: { [weak self] _ in
+			
+			self?.presentPhotoPicker()
+			
+		}))
+		
+		present(actionSheet, animated: true)
+	}
+	
+	func presentCamera() {
+		let vc = UIImagePickerController()
+		vc.sourceType = .camera
+		vc.delegate = self
+		vc.allowsEditing = true
+		present(vc, animated: true)
+	}
+	
+	func presentPhotoPicker() {
+		let vc = UIImagePickerController()
+		vc.sourceType = .photoLibrary
+		vc.delegate = self
+		vc.allowsEditing = true
+		present(vc, animated: true)
+	}
+	
+	func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+		picker.dismiss(animated: true, completion: nil)
+		guard let selectedImage = info[UIImagePickerController.InfoKey.editedImage] as? UIImage else {
+			return
+		}
+		
+		self.imageView.image = selectedImage
+	}
+	
+	func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+		picker.dismiss(animated: true, completion: nil)
 	}
 	
 }
