@@ -6,7 +6,7 @@
 //
 
 import UIKit
-import FirebaseAuth
+
 
 class RegisterViewController: UIViewController {
 	
@@ -193,12 +193,6 @@ class RegisterViewController: UIViewController {
 		
 		// Firebase Log In
 		
-		FirebaseAuth.Auth.auth().createUser(withEmail: email, password: password, completion: { authResult, error in
-			guard authResult != nil, error == nil else {
-				print("Error cureating user")
-				return
-			}
-		})
 		
 
 			
