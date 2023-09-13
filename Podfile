@@ -8,8 +8,4 @@ target 'first_messenger' do
 
   # Pods for first_messenger
 
-pod 'Firebase/Core'
-pod 'Firebase/Auth'
-pod 'Firebase/Database'
-
 end
